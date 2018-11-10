@@ -123,7 +123,7 @@ typedef unsigned long long IUINT64;
 #endif
 #endif
 
-#ifndef inline
+#if (!defined(__cplusplus)) && (!defined(inline))
 #define inline INLINE
 #endif
 
@@ -236,7 +236,7 @@ typedef struct IQUEUEHEAD iqueue_head;
     #ifndef IWORDS_BIG_ENDIAN
         #if defined(__hppa__) || \
             defined(__m68k__) || defined(mc68000) || defined(_M_M68K) || \
-            (defined(__MIPS__) && defined(__MISPEB__)) || \
+            (defined(__MIPS__) && defined(__MIPSEB__)) || \
             defined(__ppc__) || defined(__POWERPC__) || defined(_M_PPC) || \
             defined(__sparc__) || defined(__powerpc__) || \
             defined(__mc68000__) || defined(__s390x__) || defined(__s390__)
@@ -249,6 +249,34 @@ typedef struct IQUEUEHEAD iqueue_head;
 #endif
 
 
+/* 
+ * 名词说明:
+ * mtu: 最大传输单元,即每次发送的最大数据
+ * rto: Retransmission TimeOut,重传超时间隔
+ * cwnd: congestion window, 拥塞窗口,限制发送方可发送kcp包个数,与接收方窗口有关,与网络状况有关
+ * rwnd: receiver window,接收方窗口，表示接收方还可以接收多少个kcp包
+ *
+ * 可靠性: 1.不丢包 2.收包有序
+ * 通过对每个包编号+确认机制可以保证不丢包,通过滑动窗口可以保证收包有序
+ * [rcv_nxt,rcv_nxt+rcv_wnd) 构成接收滑动窗口
+ * [snd_una,snd_nxt) 构成发送滑动窗口
+ * 消息包最大大小: 256*mss
+ *
+ * kcp支持多项配置,如:
+ * 1. 极速模式/普通模式
+ * 2. 关闭拥塞控制/拥塞控制
+ * 3. 快速重传模式，默认0关闭，如设置2，2次跨越将立即重传
+ * 4. 窗口大小
+ * 5. mtu大小
+ * 6. 流模式/报文模式
+ * 等等
+ *
+ * 流模式和报文模式区别:
+ * 不管哪种模式下,kcp都会按mtu对上层发包拆分成分片,真正发送时,连续的
+ * 较小分片还会尽量合并成mtu大小一次发送。流模式下会把两次发送的数据衔接成一
+ * 个kcp分片,以保证每个分片都达到mtu值,而报文模式下允许发送<mtu的包。流模式
+ * 类似tcp,上层需要处理粘包问题，报文模式则不必
+ */
 
 //=====================================================================
 // SEGMENT
@@ -256,19 +284,19 @@ typedef struct IQUEUEHEAD iqueue_head;
 struct IKCPSEG
 {
 	struct IQUEUEHEAD node;
-	IUINT32 conv;
-	IUINT32 cmd;
-	IUINT32 frg;
-	IUINT32 wnd;
-	IUINT32 ts;
-	IUINT32 sn;
-	IUINT32 una;
-	IUINT32 len;
-	IUINT32 resendts;
-	IUINT32 rto;
-	IUINT32 fastack;
-	IUINT32 xmit;
-	char data[1];
+	IUINT32 conv;			// 会话ID
+	IUINT32 cmd;			// 命令
+	IUINT32 frg;			// 分片ID
+	IUINT32 wnd;			// 接收窗口剩余大小
+	IUINT32 ts;				// 分片发送时间(毫秒为单位),对于ICKP_CMD_ACK会复制发送方的时间
+	IUINT32 sn;				// 发包序列号
+	IUINT32 una;			// sn < una的分片已收到
+	IUINT32 len;			// 数据长度
+	IUINT32 resendts;		// 分片下次重发时间点
+	IUINT32 rto;			// 重传间隔
+	IUINT32 fastack;		// ack被跳过次数(受到>自身序号ack包次数),重发后会清零
+	IUINT32 xmit;			// 发送次数(未确认次数)
+	char data[1];			// 分片数据
 };
 
 
@@ -277,30 +305,75 @@ struct IKCPSEG
 //---------------------------------------------------------------------
 struct IKCPCB
 {
+	// conv--会话ID,mtu--最大传输大小,mss--去掉头部的最大传输大小,state--网络状态(-1:可能瘫痪,0--正常)
 	IUINT32 conv, mtu, mss, state;
+	// snd_una--发送方最小未确认包序号
+	// snd_nxt--发送方最大包序号(排除此值),每发一个包会自增1(snd_buf每增加一个分片时)
+	// rcv_nxt--每有序收到一个包自增1(rcv_queue每增加一个分片时)
 	IUINT32 snd_una, snd_nxt, rcv_nxt;
+	// ssthresh--cwnd的最大值
+	// 其他值没用到
 	IUINT32 ts_recent, ts_lastack, ssthresh;
+	// rx_rto--重传间隔
+	// 其他值均为中途调整rx_rto的中间值
 	IINT32 rx_rttval, rx_srtt, rx_rto, rx_minrto;
+	// snd_wnd--发送窗口大小
+	// rcv_wnd--接收窗口大小
+	// rmt_wnd--对方接受窗口可用大小
+	// cwnd--拥塞控制大小,不开启拥塞控制下有用,正常情况由min(发送窗口大小,对方可接收大小)决定
+	// 发送数据量,开启拥塞控制后,cwnd也会参与取小,而cwnd可以根据网络好坏调整大小
+	// probe--记录下个tick需要发送的ICKP_ASK_SEND/IKCP_ASK_TELL
 	IUINT32 snd_wnd, rcv_wnd, rmt_wnd, cwnd, probe;
+	// current--当前时间戳(毫秒为单位)
+	// interval--下次刷新时间间隔
+	// ts_flush--下次刷新时间点
+	// xmit--所有分片重发次数总和
 	IUINT32 current, interval, ts_flush, xmit;
+	// nrcv_buf--rcv_buf队列元素数量
+	// nsnd_buf--snd_buf队列元素数量
 	IUINT32 nrcv_buf, nsnd_buf;
+	// nrcv_que--rcv_queue队列元素数量
+	// nsnd_que--snd_queue队列元素数量
 	IUINT32 nrcv_que, nsnd_que;
+	// nodelay: 1--快速模式(该模式下最小重传间隔为30ms),0--普通模式(该模式下最小重传间隔为100ms)
+	// updated--ikcp_update调用过后设置为1
 	IUINT32 nodelay, updated;
+	// ts_probe--大于该时间后,必要情况才发命令IKCP_CMD_WASK
+	// probe_wait--多少间隔时间内不重复发送IKCP_CMD_WASK
 	IUINT32 ts_probe, probe_wait;
+	// dead_link--重发多少次未收到确认视为网络瘫痪
+	// incr--用来控制cwnd增长速度
 	IUINT32 dead_link, incr;
+	//input->rcv_buf->rcv_queue->recv
+	//send->snd_queue->snd_buf->output
+	// 发包队列(待发送数据)
 	struct IQUEUEHEAD snd_queue;
+	// 收包队列(经过有序检查的数据,供上层获取)
 	struct IQUEUEHEAD rcv_queue;
+	// 发包缓存(以发送待确认数据)
 	struct IQUEUEHEAD snd_buf;
+	// 收包缓存(已收到数据)
 	struct IQUEUEHEAD rcv_buf;
+	// 回复ACK列表
 	IUINT32 *acklist;
+	// 回复ACK列表当前数量
 	IUINT32 ackcount;
+	// 回复ACK列表容量大小
 	IUINT32 ackblock;
+	// 用户数据
 	void *user;
+	// 内部buffer
 	char *buffer;
+	// 0--关闭快速重传,否则:faskack >= fastrecend时快速重传
 	int fastresend;
-	int nocwnd;
+	// nocwnd: 0--开启拥塞控制,1--关闭拥塞控制
+	// stream: 0--流式模式,1--报文式模式
+	int nocwnd,stream;
+	// 日志掩码
 	int logmask;
+	// 输出回调(上层在这个回调中做自身逻辑,如用udp发送数据)
 	int (*output)(const char *buf, int len, struct IKCPCB *kcp, void *user);
+	// 日志回调
 	void (*writelog)(const char *log, struct IKCPCB *kcp, void *user);
 };
 
@@ -315,7 +388,7 @@ typedef struct IKCPCB ikcpcb;
 #define IKCP_LOG_IN_ACK			32
 #define IKCP_LOG_IN_PROBE		64
 #define IKCP_LOG_IN_WINS		128
-#define IKCP_LOG_OUT_DATA		256
+#define IKCP_LOG_OUT_DATA		25/
 #define IKCP_LOG_OUT_ACK		512
 #define IKCP_LOG_OUT_PROBE		1024
 #define IKCP_LOG_OUT_WINS		2048
@@ -335,6 +408,10 @@ ikcpcb* ikcp_create(IUINT32 conv, void *user);
 
 // release kcp control object
 void ikcp_release(ikcpcb *kcp);
+
+// set output callback, which will be invoked by kcp
+void ikcp_setoutput(ikcpcb *kcp, int (*output)(const char *buf, int len, 
+	ikcpcb *kcp, void *user));
 
 // user/upper level recv: returns size, returns below zero for EAGAIN
 int ikcp_recv(ikcpcb *kcp, char *buffer, int len);
@@ -381,13 +458,14 @@ int ikcp_waitsnd(const ikcpcb *kcp);
 // nc: 0:normal congestion control(default), 1:disable congestion control
 int ikcp_nodelay(ikcpcb *kcp, int nodelay, int interval, int resend, int nc);
 
-int ikcp_rcvbuf_count(const ikcpcb *kcp);
-int ikcp_sndbuf_count(const ikcpcb *kcp);
 
 void ikcp_log(ikcpcb *kcp, int mask, const char *fmt, ...);
 
 // setup allocator
 void ikcp_allocator(void* (*new_malloc)(size_t), void (*new_free)(void*));
+
+// read conv
+IUINT32 ikcp_getconv(const void *ptr);
 
 
 #ifdef __cplusplus
