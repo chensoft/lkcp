@@ -53,9 +53,12 @@ static void kcp_writelog_callback(const char *log,ikcpcb *kcp,void *user) {
     int log_handle = c -> log_handle;
     if (log_handle == LUA_NOREF)
         return;
-    lua_rawgeti(L, LUA_REGISTRYINDEX, log_handle);
-    lua_pushstring(L,log);
-    lua_call(L, 1, 0);
+    lua_rawgeti(L,LUA_REGISTRYINDEX,LUA_RIDX_MAINTHREAD);
+    lua_State *mL = lua_tothread(L,-1);
+    lua_pop(L,1);
+    lua_rawgeti(mL, LUA_REGISTRYINDEX, log_handle);
+    lua_pushstring(mL,log);
+    lua_pcall(mL, 1, 0,0);
 }
 
 static int kcp_output_callback(const char *buf, int len, ikcpcb *kcp, void *arg) {
@@ -63,9 +66,12 @@ static int kcp_output_callback(const char *buf, int len, ikcpcb *kcp, void *arg)
     lua_State* L = c -> L;
     int handle = c -> handle;
 
-    lua_rawgeti(L, LUA_REGISTRYINDEX, handle);
-    lua_pushlstring(L, buf, len);
-    lua_call(L, 1, 0);
+    lua_rawgeti(L,LUA_REGISTRYINDEX,LUA_RIDX_MAINTHREAD);
+    lua_State *mL = lua_tothread(L,-1);
+    lua_pop(L,1);
+    lua_rawgeti(mL, LUA_REGISTRYINDEX, handle);
+    lua_pushlstring(mL, buf, len);
+    lua_pcall(mL, 1, 0,0);
 
     return 0;
 }
@@ -79,8 +85,10 @@ static int kcp_gc(lua_State* L) {
         struct Callback* c = (struct Callback*)kcp -> user;
         int handle = c -> handle;
         int log_handle = c -> log_handle;
-        luaL_unref(L, LUA_REGISTRYINDEX, handle);
-        if (log_handle != 0) {
+        if (handle != LUA_NOREF) {
+            luaL_unref(L, LUA_REGISTRYINDEX, handle);
+        }
+        if (log_handle != LUA_NOREF) {
             luaL_unref(L, LUA_REGISTRYINDEX, log_handle);
         }
         free(c);
