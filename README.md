@@ -1,3 +1,6 @@
+# New:
+use `luarocks install lkcp`
+
 # Introduction:
 
 Lua binding for KCP, interface description written in lua-interface.md, see details of the project description within the KCP. what is KCP? please visit: https://github.com/skywind3000/kcp, http://www.skywind.me/blog/archives/1048 
