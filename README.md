@@ -22,38 +22,20 @@ Just make
 
 #lua-interface:
 
-## LKcp.lkcp_init(output)
-
-### DESCRIPTION
-    Init KCP layer.
-
-### PARAMETERS
-    output: a callback for KCP layer to invoke when send data to transport layer
-    [
-        output prototype:
-            function output(info, buf)
-                ...
-            end
-        info is brought when invoke lkcp_create
-        buf is to be sent
-    ]
-
-### RETURN
-    ret: always 0
-
-## LKcp.lkcp_create(session, info)
+## LKcp.lkcp_create(session, output)
 
 ### DESCRIPTION
     Create kcp object.
 
 ### PARAMETERS
     session: number mark session 
-    info: extra info, when KCP layer invoke callback to send data, KCP layer would brings that to output
+    output: a callback for KCP layer to invoke when send data to transport layer
     [
-        info prototype:
-            info = {1, "who", ...}
-        notice:
-            the form of info must be sequential, and elements must be string or integer
+        output prototype:
+            function output(buf)
+                ...
+            end
+        buf is to be sent
     ]
 
 ### RETURN
