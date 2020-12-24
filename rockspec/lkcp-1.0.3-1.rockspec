@@ -1,8 +1,8 @@
 package = "lkcp"
-version = "1.0.2-1"
+version = "1.0.3-1"
 source = {
    url = "git://github.com/chensoft/lkcp",
-   tag = "v1.0.2"
+   tag = "v1.0.3"
 }
 description = {
    summary = "Lua bindings for KCP, with LuaRocks & CMake support",
@@ -11,7 +11,7 @@ description = {
    license = "MIT"
 }
 dependencies = {
-   "lua == 5.3"
+   "lua >= 5.3"
 }
 build = {
    type = "cmake",
