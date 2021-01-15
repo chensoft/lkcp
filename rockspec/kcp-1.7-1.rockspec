@@ -1,4 +1,4 @@
-package = "lua-kcp"
+package = "kcp"
 version = "1.7-1"
 source = {
    url = "git://github.com/chensoft/lua-kcp",

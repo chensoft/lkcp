@@ -4,7 +4,7 @@ Lua bindings for `https://github.com/skywind3000/kcp`
 
 # Install
 
-use `luarocks install lua-kcp`
+use `luarocks install kcp`
 
 # Initial
 
