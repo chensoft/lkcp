@@ -93,7 +93,7 @@ static int kcp_gc(lua_State* L) {
     return 0;
 }
 
-static int lkcp_create(lua_State* L){
+static int kcp_create(lua_State* L){
     int log_handle = LUA_NOREF;
     int n = lua_gettop(L);
     assert(n <= 3);
@@ -132,7 +132,7 @@ static int lkcp_create(lua_State* L){
     return 1;
 }
 
-static int lkcp_recv(lua_State* L){
+static int kcp_recv(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -155,7 +155,7 @@ static int lkcp_recv(lua_State* L){
     return 2;
 }
 
-static int lkcp_send(lua_State* L){
+static int kcp_send(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -170,7 +170,7 @@ static int lkcp_send(lua_State* L){
     return 1;
 }
 
-static int lkcp_update(lua_State* L){
+static int kcp_update(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -182,7 +182,7 @@ static int lkcp_update(lua_State* L){
     return 0;
 }
 
-static int lkcp_check(lua_State* L){
+static int kcp_check(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -195,7 +195,7 @@ static int lkcp_check(lua_State* L){
     return 1;
 }
 
-static int lkcp_input(lua_State* L){
+static int kcp_input(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -210,7 +210,7 @@ static int lkcp_input(lua_State* L){
     return 1;
 }
 
-static int lkcp_flush(lua_State* L){
+static int kcp_flush(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -221,7 +221,7 @@ static int lkcp_flush(lua_State* L){
     return 0;
 }
 
-static int lkcp_wndsize(lua_State* L){
+static int kcp_wndsize(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -234,7 +234,7 @@ static int lkcp_wndsize(lua_State* L){
     return 0;
 }
 
-static int lkcp_nodelay(lua_State* L){
+static int kcp_nodelay(lua_State* L){
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -250,7 +250,7 @@ static int lkcp_nodelay(lua_State* L){
     return 1;
 }
 
-static int lkcp_peeksize(lua_State* L) {
+static int kcp_peeksize(lua_State* L) {
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -261,7 +261,7 @@ static int lkcp_peeksize(lua_State* L) {
     return 1;
 }
 
-static int lkcp_setmtu(lua_State* L) {
+static int kcp_setmtu(lua_State* L) {
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -274,7 +274,7 @@ static int lkcp_setmtu(lua_State* L) {
     return 1;
 }
 
-static int lkcp_waitsnd(lua_State* L) {
+static int kcp_waitsnd(lua_State* L) {
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -285,7 +285,7 @@ static int lkcp_waitsnd(lua_State* L) {
     return 1;
 }
 
-static int lkcp_logmask(lua_State* L) {
+static int kcp_logmask(lua_State* L) {
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
@@ -297,7 +297,7 @@ static int lkcp_logmask(lua_State* L) {
     return 0;
 }
 
-static int lkcp_getconv(lua_State* L) {
+static int kcp_getconv(lua_State* L) {
     if (lua_isnoneornil(L,1)) {
         return 0;
     }
@@ -308,35 +308,35 @@ static int lkcp_getconv(lua_State* L) {
 }
 
 
-static const struct luaL_Reg lkcp_methods [] = {
-    { "lkcp_recv" , lkcp_recv },
-    { "lkcp_send" , lkcp_send },
-    { "lkcp_update" , lkcp_update },
-    { "lkcp_check" , lkcp_check },
-    { "lkcp_input" , lkcp_input },
-    { "lkcp_flush" , lkcp_flush },
-    { "lkcp_wndsize" , lkcp_wndsize },
-    { "lkcp_nodelay" , lkcp_nodelay },
-    { "lkcp_peeksize",lkcp_peeksize },
-    { "lkcp_setmtu",lkcp_setmtu },
-    { "lkcp_waitsnd",lkcp_waitsnd },
-    { "lkcp_logmask",lkcp_logmask },
+static const struct luaL_Reg kcp_methods [] = {
+    { "recv", kcp_recv },
+    { "send", kcp_send },
+    { "update", kcp_update },
+    { "check", kcp_check },
+    { "input", kcp_input },
+    { "flush", kcp_flush },
+    { "wndsize", kcp_wndsize },
+    { "nodelay", kcp_nodelay },
+    { "peeksize", kcp_peeksize },
+    { "setmtu", kcp_setmtu },
+    { "waitsnd", kcp_waitsnd },
+    { "logmask", kcp_logmask },
     {NULL, NULL},
 };
 
 static const struct luaL_Reg l_methods[] = {
-    { "lkcp_create" , lkcp_create },
-    { "lkcp_getconv",lkcp_getconv },
+    { "create" , kcp_create },
+    { "getconv", kcp_getconv },
     {NULL, NULL},
 };
 
-int luaopen_lkcp(lua_State* L) {
+int luaopen_kcp(lua_State* L) {
     luaL_checkversion(L);
 
     luaL_newmetatable(L, "kcp_meta");
 
     lua_newtable(L);
-    luaL_setfuncs(L, lkcp_methods, 0);
+    luaL_setfuncs(L, kcp_methods, 0);
     lua_setfield(L, -2, "__index");
     lua_pushcfunction(L, kcp_gc);
     lua_setfield(L, -2, "__gc");
