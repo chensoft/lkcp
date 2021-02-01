@@ -290,6 +290,8 @@ ikcpcb* ikcp_create(IUINT32 conv, void *user)
 	kcp->dead_link = IKCP_DEADLINK;
 	kcp->output = NULL;
 	kcp->writelog = NULL;
+	kcp->totalcnt = 0;
+	kcp->resendcnt = 0;
 
 	return kcp;
 }
@@ -515,6 +517,7 @@ int ikcp_send(ikcpcb *kcp, const char *buffer, int len)
 	for (i = 0; i < count; i++) {
 		int size = len > (int)kcp->mss ? (int)kcp->mss : len;
 		seg = ikcp_segment_new(kcp, size);
+		kcp->totalcnt++; //新增一个kcp的packet
 		assert(seg);
 		if (seg == NULL) {
 			return -2;
@@ -1068,6 +1071,7 @@ void ikcp_flush(ikcpcb *kcp)
 			}
 			segment->resendts = current + segment->rto;
 			lost = 1;
+			kcp->resendcnt++; //超时没有收到ack包, 重传 
 		}
 		else if (segment->fastack >= resent) {
 			if ((int)segment->xmit <= kcp->fastlimit || 
@@ -1077,6 +1081,7 @@ void ikcp_flush(ikcpcb *kcp)
 				segment->fastack = 0;
 				segment->resendts = current + segment->rto;
 				change++;
+				kcp->resendcnt++; //segment的累计被跳过次数, 大于设定的快速重传次数(kcp_nodelay第四个参数), 重传
 			}
 		}
 
@@ -1292,4 +1297,15 @@ IUINT32 ikcp_getconv(const void *ptr)
 	return conv;
 }
 
+//总的segment数量
+int ikcp_sendcount(const ikcpcb *kcp)
+{
+	return kcp->totalcnt;
+}
+
+//重发的segment数量
+int ikcp_resendcount(const ikcpcb *kcp)
+{
+	return kcp->resendcnt;
+}
 

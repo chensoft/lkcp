@@ -312,6 +312,8 @@ struct IKCPCB
 	int fastlimit;
 	int nocwnd, stream;
 	int logmask;
+	int resendcnt; //重发包次数
+	int totalcnt;  //发送总包次数
 	int (*output)(const char *buf, int len, struct IKCPCB *kcp, void *user);
 	void (*writelog)(const char *log, struct IKCPCB *kcp, void *user);
 };
@@ -406,6 +408,11 @@ void ikcp_allocator(void* (*new_malloc)(size_t), void (*new_free)(void*));
 // read conv
 IUINT32 ikcp_getconv(const void *ptr);
 
+//总的segment数量
+int ikcp_sendcount(const ikcpcb *kcp);
+
+//重发的segment数量
+int ikcp_resendcount(const ikcpcb *kcp);
 
 #ifdef __cplusplus
 }

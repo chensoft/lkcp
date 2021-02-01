@@ -307,6 +307,27 @@ static int kcp_getconv(lua_State* L) {
     return 1;
 }
 
+static int kcp_sendcount(lua_State* L) {
+    ikcpcb* kcp = check_kcp(L, 1);
+    if (kcp == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "error: kcp not args");
+        return 2;
+    }
+    lua_pushinteger(L,ikcp_sendcount(kcp));
+    return 1;
+}
+
+static int kcp_resendcount(lua_State* L) {
+    ikcpcb* kcp = check_kcp(L, 1);
+    if (kcp == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "error: kcp not args");
+        return 2;
+    }
+    lua_pushinteger(L,ikcp_resendcount(kcp));
+    return 1;
+}
 
 static const struct luaL_Reg kcp_methods [] = {
     { "recv", kcp_recv },
@@ -321,6 +342,8 @@ static const struct luaL_Reg kcp_methods [] = {
     { "setmtu", kcp_setmtu },
     { "waitsnd", kcp_waitsnd },
     { "logmask", kcp_logmask },
+    { "sndcnt", kcp_sendcount },
+    { "resndcnt", kcp_resendcount },
     {NULL, NULL},
 };
 
