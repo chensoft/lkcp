@@ -25,3 +25,5 @@ use `luarocks install kcp`
 * setmtu(mtu)
 * waitsnd()
 * logmask()
+* sndcnt()
+* resndcnt()
