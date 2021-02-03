@@ -318,14 +318,25 @@ static int kcp_sendcount(lua_State* L) {
     return 1;
 }
 
-static int kcp_resendcount(lua_State* L) {
+static int kcp_timeoutcount(lua_State* L) {
     ikcpcb* kcp = check_kcp(L, 1);
     if (kcp == NULL) {
         lua_pushnil(L);
         lua_pushstring(L, "error: kcp not args");
         return 2;
     }
-    lua_pushinteger(L,ikcp_resendcount(kcp));
+    lua_pushinteger(L, ikcp_timeoutcount(kcp));
+    return 1;
+}
+
+static int kcp_fastsndcount(lua_State* L) {
+    ikcpcb* kcp = check_kcp(L, 1);
+    if (kcp == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "error: kcp not args");
+        return 2;
+    }
+    lua_pushinteger(L, ikcp_fastsndcount(kcp));
     return 1;
 }
 
@@ -343,7 +354,8 @@ static const struct luaL_Reg kcp_methods [] = {
     { "waitsnd", kcp_waitsnd },
     { "logmask", kcp_logmask },
     { "sndcnt", kcp_sendcount },
-    { "resndcnt", kcp_resendcount },
+    { "timeoutcnt", kcp_timeoutcount },
+    { "fastsndcnt", kcp_fastsndcount },
     {NULL, NULL},
 };
 
