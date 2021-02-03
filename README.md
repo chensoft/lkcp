@@ -26,4 +26,5 @@ use `luarocks install kcp`
 * waitsnd()
 * logmask()
 * sndcnt()
-* resndcnt()
+* timeoutcnt()
+* fastsndcnt()
