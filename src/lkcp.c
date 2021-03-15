@@ -340,6 +340,19 @@ static int kcp_fastsndcount(lua_State* L) {
     return 1;
 }
 
+static int kcp_minrto(lua_State* L){
+    ikcpcb* kcp = check_kcp(L, 1);
+    if (kcp == NULL) {
+        lua_pushnil(L);
+        lua_pushstring(L, "error: kcp not args");
+        return 2;
+    }
+
+    int32_t minrto = luaL_checkinteger(L, 2);
+    kcp->rx_minrto = minrto;
+    return 0;
+}
+
 static const struct luaL_Reg kcp_methods [] = {
     { "recv", kcp_recv },
     { "send", kcp_send },
@@ -356,6 +369,7 @@ static const struct luaL_Reg kcp_methods [] = {
     { "sndcnt", kcp_sendcount },
     { "timeoutcnt", kcp_timeoutcount },
     { "fastsndcnt", kcp_fastsndcount },
+    { "minrto", kcp_minrto },
     {NULL, NULL},
 };
 
