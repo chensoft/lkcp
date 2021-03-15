@@ -28,3 +28,4 @@ use `luarocks install kcp`
 * sndcnt()
 * timeoutcnt()
 * fastsndcnt()
+* minrto(rto)
